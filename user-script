@@ -45,9 +45,14 @@ for sock in /tmp/.X11-unix/X*; do
 	[[ -n $user ]] || fatal "failed to find owner (group) of $sock"
 
 	# get the users home directory
-	home=$(getent passwd "$user" | cut -d: -f6)
+	# This is really broken - I'm doing nothing to ensure socket matches owner in ConsoleKit
+	# However, I do enforce user matches for processing below - it reports only one user; this should be looped
+	# I can't trust the socket owner because it's owned by root with my Cinnamon/lxdm config
+	userid=$(ck-list-sessions  | awk '/unix-user/ {print $3}' | head -1 | sed "s/'//g")
+	user=$(getent passwd "$userid" | cut -d: -f1)
+	home=$(getent passwd "$userid" | cut -d: -f6)
 	[[ -n $home && -d $home ]] || \
-	    fatal "failed to find users $user home directory"
+	    fatal "failed to find user $user home directory"
 
 	[[ -e $home/.Xauthority ]] || \
 	    fatal "failed to find Xauthority file for user $user"
